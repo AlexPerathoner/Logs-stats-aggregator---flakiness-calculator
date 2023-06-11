@@ -1,6 +1,17 @@
 import * as fs from "fs";
-import { aggregateMeasurementsByTestCase, calculateMaxAndAverageMeasurements, getStartAndEndTimeOfTestCasesInLog } from "./functions";
-import { AggregatedTestCaseWithIterationMaxAvgMap, AggregatedTestCaseWithMeasurementsMap, JsonFormat, TimedTestCaseIterationsMap } from "./types";
+import {
+	aggregateMeasurementsByTestCase,
+	calculateFlakiness,
+	calculateMaxAndAverageMeasurements,
+	getStartAndEndTimeOfTestCasesInLog,
+} from "./functions";
+import {
+	AggregatedTestCaseWithFlakiness,
+	AggregatedTestCaseWithIterationMaxAvgMap,
+	AggregatedTestCaseWithMeasurementsMap,
+	JsonFormat,
+	TimedTestCaseIterationsMap,
+} from "./types";
 
 let startTime = Date.now();
 console.log("Starting...\n\nReading log file...");
@@ -23,10 +34,13 @@ let aggregatedMeasurementsByTestCaseWithMaxAndAverageStats: AggregatedTestCaseWi
 	calculateMaxAndAverageMeasurements(aggregatedMeasurementsByTestCase);
 console.log("Done calculating max and average measurements for each test case.\n");
 
-console.log("Writing aggregated stats to file...");
-fs.writeFileSync("aggregated-stats.json", JSON.stringify(aggregatedMeasurementsByTestCaseWithMaxAndAverageStats, null, 2));
+console.log("Calculating flakiness for each test case...");
+let aggregatedTestCasesWithFlakiness: AggregatedTestCaseWithFlakiness[] = calculateFlakiness(aggregatedMeasurementsByTestCaseWithMaxAndAverageStats);
+console.log("Done calculating flakiness for each test case.\n");
 
-// todo: calculate flakiness of each test case
+console.log("Writing aggregated stats to file...");
+let currentTime = new Date().toISOString().replace(/:/g, "-");
+fs.writeFileSync("aggregated-stats"+ currentTime +".json", JSON.stringify(aggregatedTestCasesWithFlakiness, null, 2));
 
 let endTime = Date.now();
-console.log("Done writing aggregated stats to file.\n\nFinished. Took " + (endTime - startTime) + "ms.");
+console.log("Done writing aggregated stats to file.\n\nFinished. Took " + (endTime - startTime) + "ms in total.");

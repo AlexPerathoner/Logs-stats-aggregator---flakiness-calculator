@@ -1,4 +1,5 @@
 import {
+	AggregatedTestCaseWithFlakiness,
 	AggregatedTestCaseWithIterationMaxAvgMap,
 	AggregatedTestCaseWithMeasurementsMap,
 	JsonFormat,
@@ -38,9 +39,9 @@ export function getStartAndEndTimeOfTestCasesInLog(logLines: string[]): TimedTes
 						console.error("Failed to parse endTime for testCase " + testCaseName + " at line " + (i + 1) + ": " + line);
 						continue;
 					}
-                    if (!testCases[testCaseName]) {
-                        testCases[testCaseName] = {};
-                    }
+					if (!testCases[testCaseName]) {
+						testCases[testCaseName] = {};
+					}
 					testCases[testCaseName][iteration] = {
 						startTime: startTime,
 						endTime: endTime,
@@ -63,9 +64,9 @@ export function aggregateMeasurementsByTestCase(testCases: TimedTestCaseIteratio
 				let start = testCase.startTime;
 				let end = testCase.endTime;
 				if (measurementTimestamp >= start && measurementTimestamp <= end) {
-                    if (!aggregatedMeasurementsByTestCase[testCaseName]) {
-                        aggregatedMeasurementsByTestCase[testCaseName] = {};
-                    }
+					if (!aggregatedMeasurementsByTestCase[testCaseName]) {
+						aggregatedMeasurementsByTestCase[testCaseName] = {};
+					}
 					if (aggregatedMeasurementsByTestCase[testCaseName][iteration]) {
 						aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements.push(measurement as Measurement);
 					} else {
@@ -161,9 +162,9 @@ export function calculateMaxAndAverageMeasurements(
 			avgMeasurement.diskRead /= testCaseMeasurementsIteration.measurements.length;
 			avgMeasurement.diskWrite /= testCaseMeasurementsIteration.measurements.length;
 
-            if (!aggregatedMeasurementsByTestCaseWithMaxAndAverageStats[testCaseName]) {
-                aggregatedMeasurementsByTestCaseWithMaxAndAverageStats[testCaseName] = {};
-            }
+			if (!aggregatedMeasurementsByTestCaseWithMaxAndAverageStats[testCaseName]) {
+				aggregatedMeasurementsByTestCaseWithMaxAndAverageStats[testCaseName] = {};
+			}
 			aggregatedMeasurementsByTestCaseWithMaxAndAverageStats[testCaseName][iteration] = {
 				max: maxMeasurement,
 				avg: avgMeasurement,
@@ -172,4 +173,103 @@ export function calculateMaxAndAverageMeasurements(
 		});
 	});
 	return aggregatedMeasurementsByTestCaseWithMaxAndAverageStats;
+}
+
+export function calculateFlakiness(
+	aggregatedMeasurementsByTestCaseWithMaxAndAverageStats: AggregatedTestCaseWithIterationMaxAvgMap
+): AggregatedTestCaseWithFlakiness[] {
+	let aggregatedTestCasesWithFlakiness: AggregatedTestCaseWithFlakiness[] = [];
+	Object.entries(aggregatedMeasurementsByTestCaseWithMaxAndAverageStats).forEach(([testCaseName, testCase]) => {
+		let maxMeasurement: Measurement = {
+			userLoad: 0,
+			systemLoad: 0,
+			totalLoad: 0,
+			activeMemory: 0,
+			availableMemory: Number.MAX_SAFE_INTEGER,
+			networkRead: 0,
+			networkWrite: 0,
+			diskRead: 0,
+			diskWrite: 0,
+		};
+		let avgMeasurement: Measurement = {
+			userLoad: 0,
+			systemLoad: 0,
+			totalLoad: 0,
+			activeMemory: 0,
+			availableMemory: 0,
+			networkRead: 0,
+			networkWrite: 0,
+			diskRead: 0,
+			diskWrite: 0,
+		};
+		let prevStatus: Boolean = null;
+		let changesOfStatus = 0;
+		Object.entries(testCase).forEach(([iteration, testCaseIteration]) => {
+			if (testCaseIteration.max.userLoad > maxMeasurement.userLoad) {
+				maxMeasurement.userLoad = testCaseIteration.max.userLoad;
+			}
+			if (testCaseIteration.max.systemLoad > maxMeasurement.systemLoad) {
+				maxMeasurement.systemLoad = testCaseIteration.max.systemLoad;
+			}
+			if (testCaseIteration.max.totalLoad > maxMeasurement.totalLoad) {
+				maxMeasurement.totalLoad = testCaseIteration.max.totalLoad;
+			}
+			if (testCaseIteration.max.activeMemory > maxMeasurement.activeMemory) {
+				maxMeasurement.activeMemory = testCaseIteration.max.activeMemory;
+			}
+			if (testCaseIteration.max.availableMemory < maxMeasurement.availableMemory) {
+				maxMeasurement.availableMemory = testCaseIteration.max.availableMemory;
+			}
+			if (testCaseIteration.max.networkRead > maxMeasurement.networkRead) {
+				maxMeasurement.networkRead = testCaseIteration.max.networkRead;
+			}
+			if (testCaseIteration.max.networkWrite > maxMeasurement.networkWrite) {
+				maxMeasurement.networkWrite = testCaseIteration.max.networkWrite;
+			}
+			if (testCaseIteration.max.diskRead > maxMeasurement.diskRead) {
+				maxMeasurement.diskRead = testCaseIteration.max.diskRead;
+			}
+			if (testCaseIteration.max.diskWrite > maxMeasurement.diskWrite) {
+				maxMeasurement.diskWrite = testCaseIteration.max.diskWrite;
+			}
+			avgMeasurement.userLoad += testCaseIteration.avg.userLoad;
+			avgMeasurement.systemLoad += testCaseIteration.avg.systemLoad;
+			avgMeasurement.totalLoad += testCaseIteration.avg.totalLoad;
+			avgMeasurement.activeMemory += testCaseIteration.avg.activeMemory;
+			avgMeasurement.availableMemory += testCaseIteration.avg.availableMemory;
+			avgMeasurement.networkRead += testCaseIteration.avg.networkRead;
+			avgMeasurement.networkWrite += testCaseIteration.avg.networkWrite;
+			avgMeasurement.diskRead += testCaseIteration.avg.diskRead;
+			avgMeasurement.diskWrite += testCaseIteration.avg.diskWrite;
+
+			if (prevStatus === null) {
+				prevStatus = testCaseIteration.failed;
+			} else if (prevStatus !== testCaseIteration.failed) {
+				changesOfStatus++;
+			}
+		});
+		let numberOfItems = Object.keys(testCase).length;
+		avgMeasurement.userLoad /= numberOfItems;
+		avgMeasurement.systemLoad /= numberOfItems;
+		avgMeasurement.totalLoad /= numberOfItems;
+		avgMeasurement.activeMemory /= numberOfItems;
+		avgMeasurement.availableMemory /= numberOfItems;
+		avgMeasurement.networkRead /= numberOfItems;
+		avgMeasurement.networkWrite /= numberOfItems;
+		avgMeasurement.diskRead /= numberOfItems;
+		avgMeasurement.diskWrite /= numberOfItems;
+
+		let flakiness = (changesOfStatus /= numberOfItems - 1);
+		if (flakiness === null || isNaN(flakiness)) {
+			flakiness = 0;
+		}
+
+		aggregatedTestCasesWithFlakiness.push({
+            testCase: testCaseName,
+			max: maxMeasurement,
+			avg: avgMeasurement,
+			flakiness: flakiness,
+		});
+	});
+	return aggregatedTestCasesWithFlakiness;
 }

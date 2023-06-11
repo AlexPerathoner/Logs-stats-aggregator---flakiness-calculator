@@ -6,3 +6,5 @@ raw-stats.json
 logs.log
 raw-logs.log
 aggregated-stats.json
+
+aggregated-stats*.json

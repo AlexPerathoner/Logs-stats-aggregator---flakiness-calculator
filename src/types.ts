@@ -47,3 +47,9 @@ export interface AggregatedTestCaseWithIterationMaxAvgMap {
 		[iteration: string]: AggregatedTestCaseWithIterationMaxAvg;
 	};
 }
+export interface AggregatedTestCaseWithFlakiness {
+    testCase: string;
+	max: Measurement;
+	avg: Measurement;
+	flakiness: number;
+}
