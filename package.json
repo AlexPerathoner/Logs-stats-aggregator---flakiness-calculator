@@ -1,0 +1,21 @@
+{
+  "name": "parse-logs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "ncc build --source-map src/main.ts --out dist/main",
+    "run": "ncc run dist/main",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Alex Perathoner",
+  "license": "ISC",
+  "dependencies": {
+    "typescript": "^5.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.2.5",
+    "fs": "^0.0.1-security",
+    "ncc": "^0.3.6"
+  }
+}

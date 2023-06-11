@@ -1,0 +1,8 @@
+node_modules/
+dist/
+
+# input / output files
+raw-stats.json
+logs.log
+raw-logs.log
+aggregated-stats.json
