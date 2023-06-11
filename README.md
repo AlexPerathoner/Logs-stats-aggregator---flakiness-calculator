@@ -1,4 +1,5 @@
-# Parse logs / stats
+# Parse logs / stats
+
 Calculate **average** and **max resource usage** for each test case, and its **flakiness**.
 
 ## Input
