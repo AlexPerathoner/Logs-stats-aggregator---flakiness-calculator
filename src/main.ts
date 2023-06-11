@@ -39,8 +39,9 @@ let aggregatedTestCasesWithFlakiness: AggregatedTestCaseWithFlakiness[] = calcul
 console.log("Done calculating flakiness for each test case.\n");
 
 console.log("Writing aggregated stats to file...");
-let currentTime = new Date().toISOString().replace(/:/g, "-");
-fs.writeFileSync("aggregated-stats"+ currentTime +".json", JSON.stringify(aggregatedTestCasesWithFlakiness, null, 2));
+let currentTimestamp = (new Date()).getTime();
+
+fs.writeFileSync("aggregated-stats-"+ currentTimestamp +".json", JSON.stringify(aggregatedTestCasesWithFlakiness, null, 2));
 
 let endTime = Date.now();
 console.log("Done writing aggregated stats to file.\n\nFinished. Took " + (endTime - startTime) + "ms in total.");
