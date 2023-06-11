@@ -1,12 +1,12 @@
 import * as fs from "fs";
 import { aggregateMeasurementsByTestCase, calculateMaxAndAverageMeasurements, getStartAndEndTimeOfTestCasesInLog } from "./functions";
-import { AggregatedTestCaseWithIterationMaxAvgMap, AggregatedTestCaseWithMeasurementsMap, JsonFormat, TimedTestCaseWithIterationMap } from "./types";
+import { AggregatedTestCaseWithIterationMaxAvgMap, AggregatedTestCaseWithMeasurementsMap, JsonFormat, TimedTestCaseIterationsMap } from "./types";
 
 let startTime = Date.now();
 console.log("Starting...\n\nReading log file...");
 const logLines = fs.readFileSync("logs.log", "utf8").toString().split("\n");
 console.log("Found " + logLines.length + " lines...");
-let testCases: TimedTestCaseWithIterationMap = getStartAndEndTimeOfTestCasesInLog(logLines);
+let testCases: TimedTestCaseIterationsMap = getStartAndEndTimeOfTestCasesInLog(logLines);
 
 console.log("Found " + Object.keys(testCases).length + " test cases.\n");
 // console.log(testCases);

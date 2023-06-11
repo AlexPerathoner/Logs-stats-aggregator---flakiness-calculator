@@ -17,27 +17,33 @@ export interface TimedMeasurement extends Measurement {
 	isoString: string;
 }
 
-export interface TimedTestCaseWithIteration {
+export interface TimedTestCaseIteration {
 	startTime: number;
 	endTime: number;
-    failed: boolean;
+	failed: boolean;
 }
-export interface TimedTestCaseWithIterationMap {
-	[testCaseName: string]: TimedTestCaseWithIteration;
+export interface TimedTestCaseIterationsMap {
+	[testCaseName: string]: {
+		[iteration: string]: TimedTestCaseIteration;
+	};
 }
 
-export interface AggregatedTestCaseWithMeasurements {
+export interface AggregatedTestCaseIterationWithMeasurements {
 	measurements: [Measurement];
-    failed: boolean;
+	failed: boolean;
 }
 export interface AggregatedTestCaseWithMeasurementsMap {
-	[testCase: string]: AggregatedTestCaseWithMeasurements;
+	[testCase: string]: {
+		[iteration: string]: AggregatedTestCaseIterationWithMeasurements;
+	};
 }
 export interface AggregatedTestCaseWithIterationMaxAvg {
 	max: Measurement;
 	avg: Measurement;
-    failed: boolean;
+	failed: boolean;
 }
 export interface AggregatedTestCaseWithIterationMaxAvgMap {
-	[testCase: string]: AggregatedTestCaseWithIterationMaxAvg;
+	[testCase: string]: {
+		[iteration: string]: AggregatedTestCaseWithIterationMaxAvg;
+	};
 }
