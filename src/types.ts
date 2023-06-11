@@ -20,23 +20,23 @@ export interface TimedMeasurement extends Measurement {
 export interface TimedTestCaseWithIteration {
 	startTime: number;
 	endTime: number;
-	iteration: number;
+    failed: boolean;
 }
 export interface TimedTestCaseWithIterationMap {
 	[testCaseName: string]: TimedTestCaseWithIteration;
 }
 
 export interface AggregatedTestCaseWithMeasurements {
-	iteration: number;
 	measurements: [Measurement];
+    failed: boolean;
 }
 export interface AggregatedTestCaseWithMeasurementsMap {
 	[testCase: string]: AggregatedTestCaseWithMeasurements;
 }
 export interface AggregatedTestCaseWithIterationMaxAvg {
-	iteration: number;
 	max: Measurement;
 	avg: Measurement;
+    failed: boolean;
 }
 export interface AggregatedTestCaseWithIterationMaxAvgMap {
 	[testCase: string]: AggregatedTestCaseWithIterationMaxAvg;

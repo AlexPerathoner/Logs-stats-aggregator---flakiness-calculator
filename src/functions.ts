@@ -8,34 +8,39 @@ import {
 
 export function getStartAndEndTimeOfTestCasesInLog(logLines: string[]): TimedTestCaseWithIterationMap {
 	let testCases: TimedTestCaseWithIterationMap = {};
-	let started = false;
+	let testSuiteStarted = false;
 	let testCaseStarted = false;
 	let testCaseName = "";
 	let startTime = 0;
-	let iteration = 0;
 	for (let i = 0; i < logLines.length; i++) {
 		if (logLines[i].includes("Test Suite")) {
-			started = true;
+			testSuiteStarted = true;
 		}
-		if (started) {
-			if (logLines[i].includes("Test Case") && logLines[i].includes("started")) {
+		if (testSuiteStarted) {
+            let line = logLines[i];
+			if (line.includes("Test Case") && line.includes("started")) {
 				testCaseStarted = true;
-				let line = logLines[i];
-				iteration = parseInt(line.split("started (Iteration ")[1].split(" of")[0]);
+				let iteration = parseInt(line.split("started (Iteration ")[1].split(" of")[0]);
 				testCaseName = line.split("Test Case ")[1].split(" started")[0] + " (Iteration " + iteration + ")";
 				startTime = Date.parse(line.split(" Test Case ")[0]);
+                continue;
 				// console.log(testCaseName + " started at " + startTime + " (Iteration " + iteration + ")");
 			}
 			if (testCaseStarted) {
-				if (logLines[i].includes("passed") || logLines[i].includes("failed")) {
+				if ((line.includes("passed") || line.includes("failed")) && line.includes("Test Case")) {
+                    let failed = line.includes("failed");
 					// test finished
 					testCaseStarted = false;
-					let line = logLines[i];
 					let endTime = Date.parse(line.split(" Test Case ")[0]);
+                    // check if endTime parsing failed
+                    if (isNaN(endTime)) {
+                        console.error("Failed to parse endTime for testCase " + testCaseName + " at line " + (i+1) + ": " + line);
+                        continue;
+                    }
 					testCases[testCaseName] = {
 						startTime: startTime,
 						endTime: endTime,
-						iteration: iteration,
+                        failed: failed,
 					};
 				}
 			}
@@ -50,7 +55,6 @@ export function aggregateMeasurementsByTestCase(testCases: TimedTestCaseWithIter
 		// iterate over all stats, as there's no guarantee that testCases are in order
 		Object.entries(stats).forEach(([measurementTimestampStr, measurement]) => {
 			let measurementTimestamp = parseInt(measurementTimestampStr);
-			let iteration = testCaseTimestamps.iteration;
 			let start = testCaseTimestamps.startTime;
 			let end = testCaseTimestamps.endTime;
 			if (measurementTimestamp >= start && measurementTimestamp <= end) {
@@ -58,8 +62,8 @@ export function aggregateMeasurementsByTestCase(testCases: TimedTestCaseWithIter
 					aggregatedMeasurementsByTestCase[testCaseName].measurements.push(measurement as Measurement);
 				} else {
 					aggregatedMeasurementsByTestCase[testCaseName] = {
-						iteration: iteration,
 						measurements: [measurement as Measurement],
+                        failed: testCaseTimestamps.failed,
 					};
 				}
 			}
@@ -148,9 +152,9 @@ export function calculateMaxAndAverageMeasurements(
 		avgMeasurement.diskWrite /= testCaseMeasurements.measurements.length;
 
 		aggregatedMeasurementsByTestCaseWithMaxAndAverageStats[testCaseName] = {
-			iteration: testCaseMeasurements.iteration,
 			max: maxMeasurement,
 			avg: avgMeasurement,
+            failed: testCaseMeasurements.failed,
 		};
 	});
 	return aggregatedMeasurementsByTestCaseWithMaxAndAverageStats;

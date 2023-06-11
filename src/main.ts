@@ -26,5 +26,7 @@ console.log("Done calculating max and average measurements for each test case.\n
 console.log("Writing aggregated stats to file...");
 fs.writeFileSync("aggregated-stats.json", JSON.stringify(aggregatedMeasurementsByTestCaseWithMaxAndAverageStats, null, 2));
 
+// todo: calculate flakiness of each test case
+
 let endTime = Date.now();
 console.log("Done writing aggregated stats to file.\n\nFinished. Took " + (endTime - startTime) + "ms.");
