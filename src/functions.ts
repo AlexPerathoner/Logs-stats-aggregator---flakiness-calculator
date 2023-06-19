@@ -203,8 +203,12 @@ export function calculateFlakiness(
 			diskWrite: 0,
 		};
 		let prevStatus: Boolean = null;
-		let changesOfStatus = 0;
+		let failed = 0;
+		let runs = 0;
+		let flips = 0;
+		let possibleFlips = 0;
 		Object.entries(testCase).forEach(([iteration, testCaseIteration]) => {
+			// max
 			if (testCaseIteration.max.userLoad > maxMeasurement.userLoad) {
 				maxMeasurement.userLoad = testCaseIteration.max.userLoad;
 			}
@@ -232,6 +236,7 @@ export function calculateFlakiness(
 			if (testCaseIteration.max.diskWrite > maxMeasurement.diskWrite) {
 				maxMeasurement.diskWrite = testCaseIteration.max.diskWrite;
 			}
+			// avg
 			avgMeasurement.userLoad += testCaseIteration.avg.userLoad;
 			avgMeasurement.systemLoad += testCaseIteration.avg.systemLoad;
 			avgMeasurement.totalLoad += testCaseIteration.avg.totalLoad;
@@ -241,12 +246,19 @@ export function calculateFlakiness(
 			avgMeasurement.networkWrite += testCaseIteration.avg.networkWrite;
 			avgMeasurement.diskRead += testCaseIteration.avg.diskRead;
 			avgMeasurement.diskWrite += testCaseIteration.avg.diskWrite;
-
+			// fail rate
+			if (testCaseIteration.failed) {
+				failed++;
+			}
+			runs++;
+			// flip rate
 			if (prevStatus === null) {
 				prevStatus = testCaseIteration.failed;
 			} else if (prevStatus !== testCaseIteration.failed) {
-				changesOfStatus++;
+				flips++;
 			}
+			possibleFlips++;
+			// entropy
 		});
 		let numberOfItems = Object.keys(testCase).length;
 		avgMeasurement.userLoad /= numberOfItems;
@@ -259,16 +271,42 @@ export function calculateFlakiness(
 		avgMeasurement.diskRead /= numberOfItems;
 		avgMeasurement.diskWrite /= numberOfItems;
 
-		let flakiness = (changesOfStatus /= numberOfItems - 1);
-		if (flakiness === null || isNaN(flakiness)) {
-			flakiness = 0;
+		let failRate = failed / runs
+		let passRate = 1 - failRate
+		let flipRate = flips / possibleFlips
+		let logResultPassed = 0
+		let logResultFailed = 0
+		if (failRate != 0) {
+			logResultFailed = Math.log2(failRate)
 		}
+		if (passRate != 0) {
+			logResultPassed = Math.log2(passRate)
+		}
+		let entropy = - (failRate * logResultFailed + passRate * logResultPassed)
 
 		aggregatedTestCasesWithFlakiness.push({
             testCase: testCaseName,
-			max: maxMeasurement,
-			avg: avgMeasurement,
-			flakiness: flakiness,
+			max_userLoad: maxMeasurement.userLoad,
+			max_systemLoad: maxMeasurement.systemLoad,
+			max_totalLoad: maxMeasurement.totalLoad,
+			max_activeMemory: maxMeasurement.activeMemory,
+			max_availableMemory: maxMeasurement.availableMemory,
+			max_diskRead: maxMeasurement.diskRead,
+			max_diskWrite: maxMeasurement.diskWrite,
+			max_networkRead: maxMeasurement.networkRead,
+			max_networkWrite: maxMeasurement.networkWrite,
+			avg_userLoad: avgMeasurement.userLoad,
+			avg_systemLoad: avgMeasurement.systemLoad,
+			avg_totalLoad: avgMeasurement.totalLoad,
+			avg_activeMemory: avgMeasurement.activeMemory,
+			avg_availableMemory: avgMeasurement.availableMemory,
+			avg_diskRead: avgMeasurement.diskRead,
+			avg_diskWrite: avgMeasurement.diskWrite,
+			avg_networkRead: avgMeasurement.networkRead,
+			avg_networkWrite: avgMeasurement.networkWrite,
+			fail_rate: failRate,
+			flip_rate: flipRate,
+			entropy: entropy
 		});
 	});
 	return aggregatedTestCasesWithFlakiness;

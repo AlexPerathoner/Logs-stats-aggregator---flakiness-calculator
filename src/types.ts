@@ -49,7 +49,25 @@ export interface AggregatedTestCaseWithIterationMaxAvgMap {
 }
 export interface AggregatedTestCaseWithFlakiness {
     testCase: string;
-	max: Measurement;
-	avg: Measurement;
-	flakiness: number;
+	max_userLoad: number;
+	max_systemLoad: number;
+	max_totalLoad: number;
+	max_activeMemory: number;
+	max_availableMemory: number;
+	max_networkRead: number;
+	max_networkWrite: number;
+	max_diskRead: number;
+	max_diskWrite: number;
+	avg_userLoad: number;
+	avg_systemLoad: number;
+	avg_totalLoad: number;
+	avg_activeMemory: number;
+	avg_availableMemory: number;
+	avg_networkRead: number;
+	avg_networkWrite: number;
+	avg_diskRead: number;
+	avg_diskWrite: number;
+	fail_rate: number;
+	flip_rate: number;
+	entropy: number;
 }
