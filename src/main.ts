@@ -20,7 +20,6 @@ console.log("Found " + logLines.length + " lines...");
 let testCases: TimedTestCaseIterationsMap = getStartAndEndTimeOfTestCasesInLog(logLines);
 
 console.log("Found " + Object.keys(testCases).length + " test cases.\n");
-// console.log(testCases);
 
 const stats: JsonFormat = JSON.parse(fs.readFileSync("raw-stats.json", "utf8"));
 console.log("Found " + Object.keys(stats).length + " stat entries...\n");

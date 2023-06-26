@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import {
 	AggregatedTestCaseWithFlakiness,
 	AggregatedTestCaseWithIterationMaxAvgMap,
@@ -55,36 +54,57 @@ export function getStartAndEndTimeOfTestCasesInLog(logLines: string[]): TimedTes
 	return testCases;
 }
 
+function orderStatsByTimestamp(stats: JsonFormat): JsonFormat {
+	let orderedStats: JsonFormat = {};
+	console.log("Ordering stats by timestamp...")
+	Object.keys(stats).sort().forEach(function (key) {
+		orderedStats[parseInt(key)] = stats[parseInt(key)];
+	});
+	console.log("Finished ordering stats by timestamp.\n")
+	return orderedStats;
+}
+
+
 export function aggregateMeasurementsByTestCase(testCases: TimedTestCaseIterationsMap, stats: JsonFormat): AggregatedTestCaseWithMeasurementsMap {
 	let aggregatedMeasurementsByTestCase: AggregatedTestCaseWithMeasurementsMap = {};
+	// order stats by timestamp
+	let orderedStats = orderStatsByTimestamp(stats);
+	let maxTimestamp = parseInt(Object.keys(orderedStats)[Object.keys(orderedStats).length - 1]);
+	let currentTimestamp = parseInt(Object.keys(orderedStats)[0]);
 	// print as many # as there are test cases
 	console.log("#".repeat(Object.keys(testCases).length))
 	Object.entries(testCases).forEach(([testCaseName, testCaseIterations]) => {
 		Object.entries(testCaseIterations).forEach(([iteration, testCase]) => {
 			let start = testCase.startTime;
 			let end = testCase.endTime;
-			let iterationGotThere = false;
-			// iterate over all stats, as there's no guarantee that testCases are in order
-			Object.entries(stats).forEach(([measurementTimestampStr, measurement]) => {
-				let measurementTimestamp = parseInt(measurementTimestampStr);
-				if (measurementTimestamp >= start && measurementTimestamp <= end) {
-					if (!aggregatedMeasurementsByTestCase[testCaseName]) {
-						aggregatedMeasurementsByTestCase[testCaseName] = {};
-					}
-					iterationGotThere = true
-					if (aggregatedMeasurementsByTestCase[testCaseName][iteration]) {
-						aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements.push(measurement as Measurement);
-					} else {
-						aggregatedMeasurementsByTestCase[testCaseName][iteration] = {
-							measurements: [measurement as Measurement],
-							failed: testCase.failed,
-						};
-						if (aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements === undefined) {
-							aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements = [];
-						}
+			let iterationGotThere = true;
+			
+			// skip to start
+			for (; currentTimestamp < maxTimestamp && currentTimestamp < start; currentTimestamp++) {
+			}
+
+			for (; currentTimestamp < maxTimestamp && currentTimestamp <= end; currentTimestamp++) {
+				iterationGotThere = true
+				// if currentTimestamp is in keys of orderedStats
+				if (!orderedStats[currentTimestamp]) {
+					continue;
+				}
+				let measurement = orderedStats[currentTimestamp];
+				if (!aggregatedMeasurementsByTestCase[testCaseName]) {
+					aggregatedMeasurementsByTestCase[testCaseName] = {};
+				}
+				if (aggregatedMeasurementsByTestCase[testCaseName][iteration]) {
+					aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements.push(measurement as Measurement);
+				} else {
+					aggregatedMeasurementsByTestCase[testCaseName][iteration] = {
+						measurements: [measurement as Measurement],
+						failed: testCase.failed,
+					};
+					if (aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements === undefined) {
+						aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements = [];
 					}
 				}
-			});
+			}
 			if (!iterationGotThere) { // can happen if the test case is too fast and the measurements frequency is too low
 				// console.error("Failed to find measurements for testCase\t" + testCaseName + " iteration " + iteration + " between " + start + " and " + end + " duration: " + (end - start) + "ms");
 				if (!aggregatedMeasurementsByTestCase[testCaseName]) {
