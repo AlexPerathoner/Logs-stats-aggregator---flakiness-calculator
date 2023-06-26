@@ -29,7 +29,7 @@ export interface TimedTestCaseIterationsMap {
 }
 
 export interface AggregatedTestCaseIterationWithMeasurements {
-	measurements: [Measurement];
+	measurements: Measurement[];
 	failed: boolean;
 }
 export interface AggregatedTestCaseWithMeasurementsMap {
@@ -67,6 +67,8 @@ export interface AggregatedTestCaseWithFlakiness {
 	avg_networkWrite: number;
 	avg_diskRead: number;
 	avg_diskWrite: number;
+	failed: number;
+	passed: number;
 	fail_rate: number;
 	flip_rate: number;
 	entropy: number;

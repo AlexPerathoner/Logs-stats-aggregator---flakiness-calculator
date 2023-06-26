@@ -27,7 +27,7 @@ console.log("Found " + Object.keys(stats).length + " stat entries...\n");
 
 console.log("Aggregating measurements by test case...");
 let aggregatedMeasurementsByTestCase: AggregatedTestCaseWithMeasurementsMap = aggregateMeasurementsByTestCase(testCases, stats);
-console.log("Done aggregating measurements by test case.\n");
+console.log("\nDone aggregating measurements by test case.\n");
 
 console.log("Calculating max and average measurements for each test case...");
 let aggregatedMeasurementsByTestCaseWithMaxAndAverageStats: AggregatedTestCaseWithIterationMaxAvgMap =
@@ -41,7 +41,11 @@ console.log("Done calculating flakiness for each test case.\n");
 console.log("Writing aggregated stats to file...");
 let currentTimestamp = (new Date()).getTime();
 
-fs.writeFileSync("aggregated-stats-"+ currentTimestamp +".json", JSON.stringify(aggregatedTestCasesWithFlakiness, null, 2));
+// create output directory if it doesn't exist
+if (!fs.existsSync("./output")) {
+	fs.mkdirSync("./output");
+}
+fs.writeFileSync("./output/aggregated-stats-"+ currentTimestamp +".json", JSON.stringify(aggregatedTestCasesWithFlakiness, null, 2));
 
 let endTime = Date.now();
 console.log("Done writing aggregated stats to file.\n\nFinished. Took " + (endTime - startTime) + "ms in total.");

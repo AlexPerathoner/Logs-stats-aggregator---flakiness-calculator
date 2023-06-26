@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import {
 	AggregatedTestCaseWithFlakiness,
 	AggregatedTestCaseWithIterationMaxAvgMap,
@@ -56,17 +57,21 @@ export function getStartAndEndTimeOfTestCasesInLog(logLines: string[]): TimedTes
 
 export function aggregateMeasurementsByTestCase(testCases: TimedTestCaseIterationsMap, stats: JsonFormat): AggregatedTestCaseWithMeasurementsMap {
 	let aggregatedMeasurementsByTestCase: AggregatedTestCaseWithMeasurementsMap = {};
+	// print as many # as there are test cases
+	console.log("#".repeat(Object.keys(testCases).length))
 	Object.entries(testCases).forEach(([testCaseName, testCaseIterations]) => {
 		Object.entries(testCaseIterations).forEach(([iteration, testCase]) => {
+			let start = testCase.startTime;
+			let end = testCase.endTime;
+			let iterationGotThere = false;
 			// iterate over all stats, as there's no guarantee that testCases are in order
 			Object.entries(stats).forEach(([measurementTimestampStr, measurement]) => {
 				let measurementTimestamp = parseInt(measurementTimestampStr);
-				let start = testCase.startTime;
-				let end = testCase.endTime;
 				if (measurementTimestamp >= start && measurementTimestamp <= end) {
 					if (!aggregatedMeasurementsByTestCase[testCaseName]) {
 						aggregatedMeasurementsByTestCase[testCaseName] = {};
 					}
+					iterationGotThere = true
 					if (aggregatedMeasurementsByTestCase[testCaseName][iteration]) {
 						aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements.push(measurement as Measurement);
 					} else {
@@ -74,10 +79,24 @@ export function aggregateMeasurementsByTestCase(testCases: TimedTestCaseIteratio
 							measurements: [measurement as Measurement],
 							failed: testCase.failed,
 						};
+						if (aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements === undefined) {
+							aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements = [];
+						}
 					}
 				}
 			});
+			if (!iterationGotThere) { // can happen if the test case is too fast and the measurements frequency is too low
+				// console.error("Failed to find measurements for testCase\t" + testCaseName + " iteration " + iteration + " between " + start + " and " + end + " duration: " + (end - start) + "ms");
+				if (!aggregatedMeasurementsByTestCase[testCaseName]) {
+					aggregatedMeasurementsByTestCase[testCaseName] = {};
+				}
+				aggregatedMeasurementsByTestCase[testCaseName][iteration] = {
+					measurements: [],
+					failed: testCase.failed,
+				}
+			}
 		});
+		process.stdout.write("#")
 	});
 	return aggregatedMeasurementsByTestCase;
 }
@@ -204,9 +223,9 @@ export function calculateFlakiness(
 		};
 		let prevStatus: Boolean = null;
 		let failed = 0;
+		let passed = 0;
 		let runs = 0;
 		let flips = 0;
-		let possibleFlips = 0;
 		Object.entries(testCase).forEach(([iteration, testCaseIteration]) => {
 			// max
 			if (testCaseIteration.max.userLoad > maxMeasurement.userLoad) {
@@ -249,6 +268,8 @@ export function calculateFlakiness(
 			// fail rate
 			if (testCaseIteration.failed) {
 				failed++;
+			} else {
+				passed++;
 			}
 			runs++;
 			// flip rate
@@ -257,8 +278,6 @@ export function calculateFlakiness(
 			} else if (prevStatus !== testCaseIteration.failed) {
 				flips++;
 			}
-			possibleFlips++;
-			// entropy
 		});
 		let numberOfItems = Object.keys(testCase).length;
 		avgMeasurement.userLoad /= numberOfItems;
@@ -273,7 +292,7 @@ export function calculateFlakiness(
 
 		let failRate = failed / runs
 		let passRate = 1 - failRate
-		let flipRate = flips / possibleFlips
+		let flipRate = flips / (runs - 1)
 		let logResultPassed = 0
 		let logResultFailed = 0
 		if (failRate != 0) {
@@ -304,6 +323,8 @@ export function calculateFlakiness(
 			avg_diskWrite: avgMeasurement.diskWrite,
 			avg_networkRead: avgMeasurement.networkRead,
 			avg_networkWrite: avgMeasurement.networkWrite,
+			failed: failed,
+			passed: passed,
 			fail_rate: failRate,
 			flip_rate: flipRate,
 			entropy: entropy
