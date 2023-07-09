@@ -2,6 +2,7 @@ import {
 	AggregatedTestCaseWithFlakiness,
 	AggregatedTestCaseWithIterationMaxAvgMap,
 	AggregatedTestCaseWithMeasurementsMap,
+	Iterations,
 	JsonFormat,
 	Measurement,
 	TimedTestCaseIterationsMap,
@@ -215,6 +216,7 @@ export function calculateMaxAndAverageMeasurements(
 }
 
 export function calculateFlakiness(
+	aggregatedMeasurementsByTestCase: AggregatedTestCaseWithMeasurementsMap, 
 	aggregatedMeasurementsByTestCaseWithMaxAndAverageStats: AggregatedTestCaseWithIterationMaxAvgMap
 ): AggregatedTestCaseWithFlakiness[] {
 	let aggregatedTestCasesWithFlakiness: AggregatedTestCaseWithFlakiness[] = [];
@@ -242,8 +244,10 @@ export function calculateFlakiness(
 			diskWrite: 0,
 		};
 		let prevStatus: Boolean = null;
-		let failed = 0;
-		let passed = 0;
+		let failed_count = 0;
+		let passed_count = 0;
+		let failed_iterations: Iterations = {};
+		let passed_iterations: Iterations = {};
 		let runs = 0;
 		let flips = 0;
 		Object.entries(testCase).forEach(([iteration, testCaseIteration]) => {
@@ -287,9 +291,11 @@ export function calculateFlakiness(
 			avgMeasurement.diskWrite += testCaseIteration.avg.diskWrite;
 			// fail rate
 			if (testCaseIteration.failed) {
-				failed++;
+				failed_count++;
+				failed_iterations[iteration] = aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements;
 			} else {
-				passed++;
+				passed_count++;
+				passed_iterations[iteration] = aggregatedMeasurementsByTestCase[testCaseName][iteration].measurements;
 			}
 			runs++;
 			// flip rate
@@ -310,7 +316,7 @@ export function calculateFlakiness(
 		avgMeasurement.diskRead /= numberOfItems;
 		avgMeasurement.diskWrite /= numberOfItems;
 
-		let failRate = failed / runs
+		let failRate = failed_count / runs
 		let passRate = 1 - failRate
 		let flipRate = flips / (runs - 1)
 		let logResultPassed = 0
@@ -343,8 +349,10 @@ export function calculateFlakiness(
 			avg_diskWrite: avgMeasurement.diskWrite,
 			avg_networkRead: avgMeasurement.networkRead,
 			avg_networkWrite: avgMeasurement.networkWrite,
-			failed: failed,
-			passed: passed,
+			failed_count: failed_count,
+			passed_count: passed_count,
+			failed_iterations: failed_iterations,
+			passed_iterations: passed_iterations,
 			fail_rate: failRate,
 			flip_rate: flipRate,
 			entropy: entropy

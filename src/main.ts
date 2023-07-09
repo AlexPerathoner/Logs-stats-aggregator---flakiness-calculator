@@ -34,7 +34,7 @@ let aggregatedMeasurementsByTestCaseWithMaxAndAverageStats: AggregatedTestCaseWi
 console.log("Done calculating max and average measurements for each test case.\n");
 
 console.log("Calculating flakiness for each test case...");
-let aggregatedTestCasesWithFlakiness: AggregatedTestCaseWithFlakiness[] = calculateFlakiness(aggregatedMeasurementsByTestCaseWithMaxAndAverageStats);
+let aggregatedTestCasesWithFlakiness: AggregatedTestCaseWithFlakiness[] = calculateFlakiness(aggregatedMeasurementsByTestCase, aggregatedMeasurementsByTestCaseWithMaxAndAverageStats);
 console.log("Done calculating flakiness for each test case.\n");
 
 console.log("Writing aggregated stats to file...");

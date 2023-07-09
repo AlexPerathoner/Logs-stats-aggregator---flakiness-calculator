@@ -8,3 +8,5 @@ raw-logs.log
 aggregated-stats.json
 
 aggregated-stats*.json
+
+output

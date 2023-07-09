@@ -13,6 +13,29 @@ export interface Measurement {
 	diskRead: number;
 	diskWrite: number;
 }
+export interface MaxMeasurement {
+	max_userLoad: number;
+	max_systemLoad: number;
+	max_totalLoad: number;
+	max_activeMemory: number;
+	max_availableMemory: number;
+	max_networkRead: number;
+	max_networkWrite: number;
+	max_diskRead: number;
+	max_diskWrite: number;
+}
+export interface AvgMeasurement {
+	avg_userLoad: number;
+	avg_systemLoad: number;
+	avg_totalLoad: number;
+	avg_activeMemory: number;
+	avg_availableMemory: number;
+	avg_networkRead: number;
+	avg_networkWrite: number;
+	avg_diskRead: number;
+	avg_diskWrite: number;
+}
+
 export interface TimedMeasurement extends Measurement {
 	isoString: string;
 }
@@ -47,28 +70,16 @@ export interface AggregatedTestCaseWithIterationMaxAvgMap {
 		[iteration: string]: AggregatedTestCaseWithIterationMaxAvg;
 	};
 }
-export interface AggregatedTestCaseWithFlakiness {
+export interface Iterations {
+	[iteration: string]: Measurement[];
+}
+
+export interface AggregatedTestCaseWithFlakiness extends MaxMeasurement, AvgMeasurement {
     testCase: string;
-	max_userLoad: number;
-	max_systemLoad: number;
-	max_totalLoad: number;
-	max_activeMemory: number;
-	max_availableMemory: number;
-	max_networkRead: number;
-	max_networkWrite: number;
-	max_diskRead: number;
-	max_diskWrite: number;
-	avg_userLoad: number;
-	avg_systemLoad: number;
-	avg_totalLoad: number;
-	avg_activeMemory: number;
-	avg_availableMemory: number;
-	avg_networkRead: number;
-	avg_networkWrite: number;
-	avg_diskRead: number;
-	avg_diskWrite: number;
-	failed: number;
-	passed: number;
+	failed_count: number;
+	passed_count: number;
+	failed_iterations: Iterations;
+	passed_iterations: Iterations;
 	fail_rate: number;
 	flip_rate: number;
 	entropy: number;
